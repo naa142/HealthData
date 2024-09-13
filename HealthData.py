@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 import geopy
 from geopy.geocoders import Nominatim
-import timepi
+import time
 
 st.title("Health data in Lebanon")
 # Create a text element and let the reader know the data is loading.
@@ -65,44 +65,44 @@ if 'refArea' in data.columns and 'Nb of Covid-19 cases' in data.columns:
 else:
     st.error("Columns 'refArea' or 'Nb of Covid-19 cases' not found in the dataset.")
     
-from geopy.geocoders import Nominatim
-import time
-df = pd.DataFrame(data)
-# Initialize Nominatim API for geocoding
-geolocator = Nominatim(user_agent="geoapiExercises")
 
-# Function to get latitude and longitude from area name
-def get_lat_lon(area):
-    try:
-        location = geolocator.geocode(area)
-        if location:
-            return location.latitude, location.longitude
-        else:
-            return None, None
-    except Exception as e:
-        print(f"Error retrieving data for {area}: {e}")
-        return None, None
 
-# Create empty columns for latitude and longitude
-df['lat'] = None
-df['lon'] = None
-
-# Get latitude and longitude for each area
-for i, area in enumerate(df['refArea']):
-    lat, lon = get_lat_lon(area)
-    df.at[i, 'lat'] = lat
-    df.at[i, 'lon'] = lon
-    time.sleep(1)  # Sleep for 1 second to avoid hitting the geocoding rate limit
+# Assuming `filtered_data` is the DataFrame used for the bar chart
+if 'refArea' in data.columns and 'Nb of Covid-19 cases' in data.columns:
     
 
-# Remove rows where lat or lon couldn't be retrieved
-df = df.dropna(subset=['lat', 'lon'])
+    
+   
+    # Bar Chart with Annotations
+    fig_bar = px.bar(filtered_data, x='refArea', y='Nb of Covid-19 cases',
+                     title="COVID-19 Cases by Area",
+                     labels={'refArea': 'Area', 'Nb of Covid-19 cases': 'Number of Cases' if not show_percentage else 'Percentage of Cases'},
+                     template='plotly_dark')
+    
+    # Adding annotations
+    fig_bar.update_traces(texttemplate='%{y}', textposition='outside')
 
-# Display the data with lat/lon
-st.title('COVID-19 Cases Map with Geocoded Data')
-st.write("Map of COVID-19 cases by area, represented by location.")
-st.map(df[['lat', 'lon']])
+    # Add hover info
+    fig_bar.update_traces(hoverinfo='x+y')
+    
+    # Display the Bar Chart
+    st.plotly_chart(fig_bar)
 
-# Show the updated DataFrame
-st.write("Table showing COVID-19 cases by area with latitude and longitude:")
-st.dataframe(df)
+
+# Pie Chart with Exploded Sections and Custom Colors
+fig_pie = px.pie(filtered_data, values='Nb of Covid-19 cases', names='refArea',
+                 title="COVID-19 Case Distribution by Area",
+                 template='plotly_dark',
+                 color_discrete_sequence=px.colors.qualitative.Set1)
+
+# Explode specific sections (optional)
+fig_pie.update_traces(pull=[0.1 if area in selected_areas else 0 for area in filtered_data['refArea']])
+
+# Add hover info
+fig_pie.update_traces(hoverinfo='label+percent+value')
+
+# Display the Pie Chart
+st.plotly_chart(fig_pie)
+
+
+
